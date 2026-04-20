@@ -57,21 +57,9 @@ public class WelcomeServlet extends HttpServlet {
 		response.addCookie(cookieNumVisite);
 		
 		
-		String Nazione = "";
-		String Lingua = "";
-		String pre="";
+		String Nazione = request.getLocale().getCountry();
+		String Lingua = request.getLocale().getLanguage();
 		
-		for(String s : request.getHeader("Accept-Language").split(","))
-		{
-			if(s.contains("q"))
-			{
-				Lingua = pre.substring(0,2);
-				Nazione = pre.substring(3,5);
-				break;
-			}
-			pre =s;
-		}
-			
 		String dispositivoUtente = request.getHeader("User-Agent");
 		String style="";
 		
@@ -110,7 +98,7 @@ public class WelcomeServlet extends HttpServlet {
 		}
 		
 	
-		response.getWriter().append(String.format(messaggio,style,getFlagHtmlEntities(Nazione),saluto,cookieUtente.getValue(),firstVisit.getValue(),request.getHeader("Host"),valueNumeroVisite));	
+		response.getWriter().append(String.format(messaggio,style,getFlagHtmlEntities(Nazione),saluto,cookieUtente.getValue(),firstVisit.getValue(),request.getRemoteAddr(),valueNumeroVisite));	
 	
 	}
 
