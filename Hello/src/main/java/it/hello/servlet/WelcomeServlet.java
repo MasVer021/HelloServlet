@@ -16,50 +16,57 @@ import java.time.*;
 import java.util.*;
 
 @WebServlet("/WelcomeServlet")
-public class WelcomeServlet extends HttpServlet {
-	private static final long serialVersionUID = 1L;
+public class WelcomeServlet extends HttpServlet 
+{
   
-    public WelcomeServlet() {
+	protected static String nomeCookieUtente = "utente";
+	protected static String nomeCookiePrimaVisita = "firstVisit";
+	protected static String nomeCookieNumeroVisite = "numVisite";
+    public WelcomeServlet() 
+    {
         super();
-       
     }
 
 	
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
 	{
 	
+		//Impostazioni header e content type
 		response.setContentType("text/html");
 		response.setHeader("Content-Language","it-IT");
 		response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
 		response.setHeader("Refresh","300");
 		
 
+		//Mapping cookie per ricerca agevole per nome
 		Map<String, Cookie> cookie = new HashMap<>();
-		
-		for(var c : request.getCookies())
-		{
-			cookie.put(c.getName(),c);
-		}
+		if(request.getCookies() != null)
+			for(var c : request.getCookies())
+			{
+				cookie.put(c.getName(),c);
+			}
 			
-		
-		Cookie cookieUtente =  cookie.get("utente");
-		Cookie firstVisit = cookie.get("firstVisit");
-		Cookie cookieNumVisite = cookie.get("numVisite");
+		//Estrazione cookie se già presenti
+		Cookie cookieUtente =  cookie.get(nomeCookieUtente);
+		Cookie firstVisit = cookie.get(nomeCookiePrimaVisita);
+		Cookie cookieNumVisite = cookie.get(nomeCookieNumeroVisite);
 		
 		
 		if(cookieNumVisite == null)
-			cookieNumVisite = new Cookie("numVisite","0");
+			cookieNumVisite = new Cookie(nomeCookieNumeroVisite,"0");
 		
+		//incremento e aggiornamento valore numero visite
 		int valueNumeroVisite = Integer.parseInt(cookieNumVisite.getValue()) +1; // da fare controllo errori di conversione;
 		
-		cookieNumVisite = new Cookie("numVisite", String.valueOf(valueNumeroVisite));
+		cookieNumVisite = new Cookie(nomeCookieNumeroVisite, String.valueOf(valueNumeroVisite));
 		
 		response.addCookie(cookieNumVisite);
 		
-		
+		//recupero nazione per bandiera e lingua per traduzione
 		String Nazione = request.getLocale().getCountry();
 		String Lingua = request.getLocale().getLanguage();
 		
+		//recupero dispositivo per dark mode
 		String dispositivoUtente = request.getHeader("User-Agent");
 		String style="";
 		
@@ -67,7 +74,7 @@ public class WelcomeServlet extends HttpServlet {
 			style = "css/Dark.css";
 		
 		
-		
+		//pagina di base
 		String messaggio = 	"""
 								<html>
 									<head>
@@ -86,32 +93,36 @@ public class WelcomeServlet extends HttpServlet {
 		
 		String saluto = traduzioneBentornato.get(Lingua);
 		
+		//se non trovato (prima visita) settaggio cookie
 		if(!trovato)
 		{
-			cookieUtente = new Cookie("utente",request.getParameter("fname"));
+			cookieUtente = new Cookie(nomeCookieUtente,request.getParameter("fname"));
 			cookieUtente.setMaxAge(60*60*24*7);
-			firstVisit = new Cookie("firstVisit",LocalDateTime.now().toString());
+			firstVisit = new Cookie(nomeCookiePrimaVisita,LocalDateTime.now().toString());
 			firstVisit.setMaxAge(60*60*24*7);
 			response.addCookie(cookieUtente);
 			response.addCookie(firstVisit);
 			saluto = traduzioneCiao.get(Lingua);
 		}
 		
-	
+		
+		//append del messaggio nella risposta
 		response.getWriter().append(String.format(messaggio,style,getFlagHtmlEntities(Nazione),saluto,cookieUtente.getValue(),firstVisit.getValue(),request.getRemoteAddr(),valueNumeroVisite));	
 	
 	}
 
 	
+	//richiama il metodo do get
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
 		doGet(request, response);
 	}
 	
-	private String getFlagHtmlEntities(String countryCode) 
+	//ricava codice bandiera data il codice della nazione
+	private String getFlagHtmlEntities(String CodiceNazione) 
 	{
 	    String s = "";
-	    for (char c : countryCode.toUpperCase().toCharArray()) 
+	    for (char c : CodiceNazione.toUpperCase().toCharArray()) 
 	    {
 	        int codePoint = 0x1F1E6 + (c - 'A');
 	        s+="&#"+String.valueOf(codePoint)+";";
@@ -119,6 +130,8 @@ public class WelcomeServlet extends HttpServlet {
 	    return s;
 	}
 	
+	
+	//traduzione dei messaggi tramite Map  futura implementazione traduzione attraverso API
 	private static final Map<String, String> traduzioneCiao = Map.of(
 		    "it", "Ciao",
 		    "en", "Hello",
@@ -136,9 +149,7 @@ public class WelcomeServlet extends HttpServlet {
 		    "es", "Bienvenido de nuovo",
 		    "de", "Willkommen zurück",
 		    "pt", "Bem-vindo de volta"
-		);
-	
-	
+		);		
 }
 
 
